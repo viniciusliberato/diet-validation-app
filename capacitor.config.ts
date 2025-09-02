@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7f37109553ba4b3daeefa9fdb0f410f8',
+  appId: 'app.lovable.dietvalidationapp',
   appName: 'diet-validation-app',
   webDir: 'dist',
   bundledWebRuntime: false,
