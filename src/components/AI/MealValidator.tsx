@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ValidationResult {
   isValid: boolean;
@@ -12,6 +14,7 @@ interface ValidationResult {
   missingFoods: string[];
   feedback: string;
   nutritionalMatch: number;
+  estimatedCalories?: number;
 }
 
 interface MealValidatorProps {
@@ -29,35 +32,25 @@ export const MealValidator = ({
 }: MealValidatorProps) => {
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const { toast } = useToast();
 
-  const simulateAIValidation = async (): Promise<ValidationResult> => {
-    // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Mock AI validation results
-    const detectedFoods = [
-      'Arroz integral', 'Frango grelhado', 'Brócolis', 'Cenoura'
-    ];
-    
-    const missingFoods = expectedFoods.filter(food => 
-      !detectedFoods.some(detected => 
-        detected.toLowerCase().includes(food.toLowerCase())
-      )
-    );
-    
-    const matchPercentage = Math.floor(Math.random() * 30) + 70; // 70-100%
-    const isValid = matchPercentage >= 75;
-    
-    return {
-      isValid,
-      confidence: matchPercentage,
-      detectedFoods,
-      missingFoods,
-      feedback: isValid 
-        ? `Excelente! Sua refeição está ${matchPercentage}% de acordo com o plano alimentar. Continue assim!`
-        : `Sua refeição está ${matchPercentage}% de acordo. ${missingFoods.length > 0 ? `Faltam: ${missingFoods.join(', ')}.` : ''} Considere ajustar as porções.`,
-      nutritionalMatch: matchPercentage
-    };
+  const callAIValidation = async (): Promise<ValidationResult> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-meal', {
+        body: {
+          mealType,
+          expectedFoods,
+          imageDescription: imageFile?.name || 'Imagem de uma refeição'
+        }
+      });
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('AI validation error:', error);
+      throw new Error('Erro ao validar refeição com IA');
+    }
   };
 
   const handleValidation = async () => {
@@ -66,11 +59,22 @@ export const MealValidator = ({
     setIsValidating(true);
     
     try {
-      const result = await simulateAIValidation();
+      const result = await callAIValidation();
       setValidationResult(result);
       onValidationComplete(result);
+      
+      toast({
+        title: result.isValid ? "Refeição validada!" : "Refeição analisada",
+        description: result.feedback,
+        variant: result.isValid ? "default" : "destructive"
+      });
     } catch (error) {
       console.error('Validation error:', error);
+      toast({
+        title: "Erro na validação",
+        description: "Não foi possível validar a refeição. Tente novamente.",
+        variant: "destructive"
+      });
     } finally {
       setIsValidating(false);
     }

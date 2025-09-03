@@ -9,10 +9,12 @@ import {
   MessageCircle,
   Bell,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -31,6 +33,15 @@ interface NavigationProps {
 
 export const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <>
@@ -72,9 +83,18 @@ export const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
             })}
           </div>
           
-          <div className="mt-auto">
+          <div className="mt-auto flex flex-col gap-2">
             <Button variant="ghost" size="sm" className="w-12 h-12 p-0">
               <Bell className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-12 h-12 p-0 text-muted-foreground hover:text-destructive" 
+              onClick={handleSignOut}
+              title="Sair"
+            >
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -124,6 +144,14 @@ export const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
                     </Button>
                   );
                 })}
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="h-14 flex flex-col gap-1 text-xs col-span-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Sair
+                </Button>
               </div>
             </div>
           </div>
