@@ -14,7 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      meal_plans: {
+        Row: {
+          breakfast_foods: string[] | null
+          created_at: string
+          date: string
+          dinner_foods: string[] | null
+          id: string
+          lunch_foods: string[] | null
+          snack_foods: string[] | null
+          total_calories: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          breakfast_foods?: string[] | null
+          created_at?: string
+          date: string
+          dinner_foods?: string[] | null
+          id?: string
+          lunch_foods?: string[] | null
+          snack_foods?: string[] | null
+          total_calories?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          breakfast_foods?: string[] | null
+          created_at?: string
+          date?: string
+          dinner_foods?: string[] | null
+          id?: string
+          lunch_foods?: string[] | null
+          snack_foods?: string[] | null
+          total_calories?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meals: {
+        Row: {
+          ai_feedback: string | null
+          calories_estimated: number | null
+          confidence_score: number | null
+          created_at: string
+          detected_foods: string[] | null
+          expected_foods: string[] | null
+          id: string
+          image_url: string | null
+          meal_type: string
+          missing_foods: string[] | null
+          nutritional_match: number | null
+          updated_at: string
+          user_id: string
+          validation_status: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          calories_estimated?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          detected_foods?: string[] | null
+          expected_foods?: string[] | null
+          id?: string
+          image_url?: string | null
+          meal_type: string
+          missing_foods?: string[] | null
+          nutritional_match?: number | null
+          updated_at?: string
+          user_id: string
+          validation_status?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          calories_estimated?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          detected_foods?: string[] | null
+          expected_foods?: string[] | null
+          id?: string
+          image_url?: string | null
+          meal_type?: string
+          missing_foods?: string[] | null
+          nutritional_match?: number | null
+          updated_at?: string
+          user_id?: string
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          allergies: string[] | null
+          avatar_url: string | null
+          created_at: string
+          diet_goal: string | null
+          dietary_restrictions: string[] | null
+          email: string | null
+          full_name: string | null
+          height: number | null
+          id: string
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          allergies?: string[] | null
+          avatar_url?: string | null
+          created_at?: string
+          diet_goal?: string | null
+          dietary_restrictions?: string[] | null
+          email?: string | null
+          full_name?: string | null
+          height?: number | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          allergies?: string[] | null
+          avatar_url?: string | null
+          created_at?: string
+          diet_goal?: string | null
+          dietary_restrictions?: string[] | null
+          email?: string | null
+          full_name?: string | null
+          height?: number | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
