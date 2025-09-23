@@ -104,6 +104,80 @@ export type Database = {
         }
         Relationships: []
       }
+      nutritionist_patients: {
+        Row: {
+          created_at: string
+          id: string
+          nutritionist_id: string
+          patient_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nutritionist_id: string
+          patient_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nutritionist_id?: string
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutritionist_patients_nutritionist_id_fkey"
+            columns: ["nutritionist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "nutritionist_patients_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      patient_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          invitation_code: string
+          nutritionist_id: string
+          patient_username: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_code: string
+          nutritionist_id: string
+          patient_username: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string
+          nutritionist_id?: string
+          patient_username?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_invitations_nutritionist_id_fkey"
+            columns: ["nutritionist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -119,6 +193,8 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          user_type: string
+          username: string | null
           weight: number | null
         }
         Insert: {
@@ -135,6 +211,8 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          user_type?: string
+          username?: string | null
           weight?: number | null
         }
         Update: {
@@ -151,6 +229,8 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          user_type?: string
+          username?: string | null
           weight?: number | null
         }
         Relationships: []
@@ -160,7 +240,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
