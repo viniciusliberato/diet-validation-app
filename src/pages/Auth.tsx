@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,8 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [userType, setUserType] = useState("patient");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -30,7 +33,7 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !fullName) {
+    if (!email || !password || !fullName || !username) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos.",
@@ -41,6 +44,23 @@ export default function Auth() {
 
     setIsLoading(true);
     try {
+      // Check if username already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username.trim())
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "Nome de usuário indisponível",
+          description: "Este nome de usuário já está em uso. Escolha outro.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -50,6 +70,8 @@ export default function Auth() {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
+            username: username.trim(),
+            user_type: userType,
           },
         },
       });
@@ -189,6 +211,32 @@ export default function Auth() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Nome de usuário</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="usuario123"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Apenas letras minúsculas e números, sem espaços
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="userType">Tipo de usuário</Label>
+                  <Select value={userType} onValueChange={setUserType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="patient">Paciente</SelectItem>
+                      <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
