@@ -15,7 +15,8 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [userType, setUserType] = useState("patient");
+const [userType, setUserType] = useState("patient");
+  const [loginUserType, setLoginUserType] = useState<'patient' | 'nutritionist'>('patient');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -131,11 +132,34 @@ export default function Auth() {
           throw error;
         }
       } else {
+        // Check user profile to redirect correctly
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('email', email)
+          .single();
+
+        if (profile && profile.user_type !== loginUserType) {
+          toast({
+            title: "Tipo de usuário incorreto",
+            description: `Esta conta é de ${profile.user_type === 'patient' ? 'paciente' : 'nutricionista'}. Selecione o tipo correto.`,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
         toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta!",
         });
-        navigate("/");
+        
+        // Redirect based on user type
+        if (loginUserType === 'nutritionist') {
+          navigate("/nutritionist");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error: any) {
       toast({
@@ -170,6 +194,18 @@ export default function Auth() {
 
             <TabsContent value="login" className="space-y-4">
               <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="loginUserType">Tipo de usuário</Label>
+                  <Select value={loginUserType} onValueChange={(value: 'patient' | 'nutritionist') => setLoginUserType(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="patient">Paciente</SelectItem>
+                      <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input

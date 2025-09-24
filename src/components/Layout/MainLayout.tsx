@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigation } from './Navigation';
 import { DashboardStats } from '../Dashboard/DashboardStats';
 import { WeeklyCalendar } from '../Dashboard/WeeklyCalendar';
-import { MealUpload } from '../Meals/MealUpload';
+import { PatientMealPlan } from '../MealPlan/PatientMealPlan';
 import { ProgressCharts } from '../Insights/ProgressCharts';
 import { RewardsSystem } from '../Rewards/RewardsSystem';
 import { ChatSystem } from '../Chat/ChatSystem';
@@ -21,8 +21,8 @@ const MainLayout = () => {
             <WeeklyCalendar />
           </div>
         );
-      case 'meals':
-        return <MealUpload />;
+      case 'meal-plan':
+        return <PatientMealPlan />;
       case 'progress':
         return <ProgressCharts />;
       case 'rewards':
@@ -46,7 +46,7 @@ const MainLayout = () => {
   const getPageTitle = () => {
     const titles = {
       dashboard: 'Dashboard',
-      meals: 'Registro de Refeições',
+      'meal-plan': 'Plano Alimentar',
       progress: 'Progresso e Insights',
       rewards: 'Sistema de Recompensas',
       store: 'Loja de Pontos',

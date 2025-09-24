@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, UserPlus, Calendar, BarChart3, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { UserPlus, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { DashboardStats } from '@/components/Dashboard/DashboardStats';
-import { ProgressCharts } from '@/components/Insights/ProgressCharts';
-import { UserProfile } from '@/components/Profile/UserProfile';
+import { useToast } from '@/hooks/use-toast';
+import { NutritionistPlanCreator } from '../MealPlan/NutritionistPlanCreator';
+import { PatientsList } from './PatientsList';
+import { InvitationManager } from './InvitationManager';
 
 interface Patient {
   id: string;
@@ -34,6 +32,7 @@ interface Invitation {
 
 export function NutritionistDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -69,7 +68,11 @@ export function NutritionistDashboard() {
       setPatients(patientsData as Patient[]);
     } catch (error) {
       console.error('Error fetching patients:', error);
-      toast.error('Erro ao carregar pacientes');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar pacientes",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -92,7 +95,11 @@ export function NutritionistDashboard() {
 
   const sendInvitation = async () => {
     if (!newPatientUsername.trim()) {
-      toast.error('Digite o nome de usuário do paciente');
+      toast({
+        title: "Erro",
+        description: "Digite o nome de usuário do paciente",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -106,7 +113,11 @@ export function NutritionistDashboard() {
         .single();
 
       if (userError || !userExists) {
-        toast.error('Usuário não encontrado ou não é um paciente');
+        toast({
+          title: "Erro",
+          description: "Usuário não encontrado ou não é um paciente",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -120,7 +131,11 @@ export function NutritionistDashboard() {
         .single();
 
       if (existingInvitation) {
-        toast.error('Convite já enviado para este paciente');
+        toast({
+          title: "Erro",
+          description: "Convite já enviado para este paciente",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -135,12 +150,19 @@ export function NutritionistDashboard() {
 
       if (error) throw error;
 
-      toast.success('Convite enviado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Convite enviado com sucesso!",
+      });
       setNewPatientUsername('');
       fetchInvitations();
     } catch (error) {
       console.error('Error sending invitation:', error);
-      toast.error('Erro ao enviar convite');
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar convite",
+        variant: "destructive",
+      });
     }
   };
 
@@ -178,9 +200,10 @@ export function NutritionistDashboard() {
           </div>
           
           <div className="space-y-6">
-            <UserProfile />
-            <DashboardStats />
-            <ProgressCharts />
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">Acompanhamento - {selectedPatient?.full_name}</h2>
+              <p className="text-muted-foreground">Esta funcionalidade está em desenvolvimento</p>
+            </div>
           </div>
         </div>
       </div>
@@ -195,118 +218,98 @@ export function NutritionistDashboard() {
           <h1 className="text-3xl font-bold">Painel do Nutricionista</h1>
         </div>
 
-        <Tabs defaultValue="patients" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="patients">Meus Pacientes ({patients.length})</TabsTrigger>
-            <TabsTrigger value="invitations">Convites ({invitations.length})</TabsTrigger>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="patients">Pacientes</TabsTrigger>
+            <TabsTrigger value="plans">Criar Planos</TabsTrigger>
+            <TabsTrigger value="invitations">Convites</TabsTrigger>
+            <TabsTrigger value="reports">Relatórios</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="patients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="w-5 h-5" />
-                  Convidar Novo Paciente
-                </CardTitle>
-                <CardDescription>
-                  Digite o nome de usuário do paciente para enviar um convite
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="username">Nome de usuário do paciente</Label>
-                    <Input
-                      id="username"
-                      placeholder="Ex: joao123"
-                      value={newPatientUsername}
-                      onChange={(e) => setNewPatientUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendInvitation()}
-                    />
-                  </div>
-                  <Button onClick={sendInvitation} className="mt-6">
-                    Enviar Convite
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {patients.map((patient) => (
-                <Card key={patient.id} className="cursor-pointer hover:shadow-lg transition-all">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary-foreground flex items-center justify-center text-white font-semibold">
-                        {patient.full_name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{patient.full_name}</CardTitle>
-                        <CardDescription>@{patient.username}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">{patient.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Paciente desde {new Date(patient.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                      <Button 
-                        className="w-full mt-4" 
-                        onClick={() => setSelectedPatientId(patient.user_id)}
-                      >
-                        Ver Detalhes
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {patients.length === 0 && (
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card>
-                <CardContent className="text-center py-8">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum paciente ainda</p>
-                  <p className="text-sm text-muted-foreground">Envie convites para começar a acompanhar seus pacientes</p>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Pacientes</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{patients.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {invitations.filter(i => i.status === 'pending').length} convites pendentes
+                  </p>
                 </CardContent>
               </Card>
-            )}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Convites Ativos</CardTitle>
+                  <UserPlus className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{invitations.filter(i => i.status === 'pending').length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {invitations.filter(i => i.status === 'accepted').length} aceitos este mês
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">0</div>
+                  <p className="text-xs text-muted-foreground">Em desenvolvimento</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Taxa de Adesão</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">85%</div>
+                  <p className="text-xs text-muted-foreground">+2% em relação ao mês passado</p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="invitations" className="space-y-4">
-            <div className="space-y-4">
-              {invitations.map((invitation) => (
-                <Card key={invitation.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">@{invitation.patient_username}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Código: <code className="bg-muted px-2 py-1 rounded">{invitation.invitation_code}</code>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Enviado em {new Date(invitation.created_at).toLocaleDateString('pt-BR')} • 
-                          Expira em {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        {getStatusBadge(invitation.status)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <TabsContent value="patients">
+            <PatientsList patients={patients} />
+          </TabsContent>
 
-            {invitations.length === 0 && (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum convite enviado</p>
-                </CardContent>
-              </Card>
-            )}
+          <TabsContent value="plans">
+            <NutritionistPlanCreator />
+          </TabsContent>
+
+          <TabsContent value="invitations">
+            <InvitationManager 
+              invitations={invitations}
+              onSendInvitation={sendInvitation}
+              newPatientUsername={newPatientUsername}
+              setNewPatientUsername={setNewPatientUsername}
+            />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>Relatórios e Análises</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Esta seção está em desenvolvimento. Em breve você poderá visualizar:
+                </p>
+                <ul className="list-disc list-inside mt-4 space-y-2 text-sm text-muted-foreground">
+                  <li>Relatórios de adesão aos planos alimentares</li>
+                  <li>Estatísticas de validação de refeições</li>
+                  <li>Progresso individual dos pacientes</li>
+                  <li>Análises comparativas</li>
+                </ul>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

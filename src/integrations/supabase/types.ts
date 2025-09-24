@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_meal_schedules: {
+        Row: {
+          calories_target: number | null
+          created_at: string
+          day_of_week: number
+          expected_foods: string[]
+          id: string
+          meal_type: string
+          nutrition_plan_id: string
+          portion_notes: string | null
+          scheduled_time: string
+          updated_at: string
+        }
+        Insert: {
+          calories_target?: number | null
+          created_at?: string
+          day_of_week: number
+          expected_foods?: string[]
+          id?: string
+          meal_type: string
+          nutrition_plan_id: string
+          portion_notes?: string | null
+          scheduled_time: string
+          updated_at?: string
+        }
+        Update: {
+          calories_target?: number | null
+          created_at?: string
+          day_of_week?: number
+          expected_foods?: string[]
+          id?: string
+          meal_type?: string
+          nutrition_plan_id?: string
+          portion_notes?: string | null
+          scheduled_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_meal_schedules_nutrition_plan_id_fkey"
+            columns: ["nutrition_plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plans: {
         Row: {
           breakfast_foods: string[] | null
@@ -52,6 +99,85 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      meal_validations: {
+        Row: {
+          ai_feedback: string | null
+          calories_estimated: number | null
+          confidence_score: number | null
+          created_at: string
+          daily_schedule_id: string
+          detected_foods: string[] | null
+          id: string
+          image_description: string | null
+          image_url: string | null
+          missing_foods: string[] | null
+          nutrition_plan_id: string
+          nutritional_match: number | null
+          patient_id: string
+          updated_at: string
+          validation_date: string
+          validation_status: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          calories_estimated?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          daily_schedule_id: string
+          detected_foods?: string[] | null
+          id?: string
+          image_description?: string | null
+          image_url?: string | null
+          missing_foods?: string[] | null
+          nutrition_plan_id: string
+          nutritional_match?: number | null
+          patient_id: string
+          updated_at?: string
+          validation_date: string
+          validation_status?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          calories_estimated?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          daily_schedule_id?: string
+          detected_foods?: string[] | null
+          id?: string
+          image_description?: string | null
+          image_url?: string | null
+          missing_foods?: string[] | null
+          nutrition_plan_id?: string
+          nutritional_match?: number | null
+          patient_id?: string
+          updated_at?: string
+          validation_date?: string
+          validation_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_validations_daily_schedule_id_fkey"
+            columns: ["daily_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "daily_meal_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_validations_nutrition_plan_id_fkey"
+            columns: ["nutrition_plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_validations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       meals: {
         Row: {
@@ -103,6 +229,66 @@ export type Database = {
           validation_status?: string | null
         }
         Relationships: []
+      }
+      nutrition_plans: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          nutritionist_id: string
+          patient_id: string
+          plan_name: string
+          start_date: string
+          status: string | null
+          target_compliance_percentage: number
+          target_days_to_complete: number | null
+          total_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          nutritionist_id: string
+          patient_id: string
+          plan_name: string
+          start_date: string
+          status?: string | null
+          target_compliance_percentage?: number
+          target_days_to_complete?: number | null
+          total_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          nutritionist_id?: string
+          patient_id?: string
+          plan_name?: string
+          start_date?: string
+          status?: string | null
+          target_compliance_percentage?: number
+          target_days_to_complete?: number | null
+          total_days?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plans_nutritionist_id_fkey"
+            columns: ["nutritionist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "nutrition_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       nutritionist_patients: {
         Row: {

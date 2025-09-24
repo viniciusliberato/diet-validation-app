@@ -18,7 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'meals', label: 'Refeições', icon: Camera },
+  { id: 'meal-plan', label: 'Plano Alimentar', icon: Camera },
   { id: 'progress', label: 'Progresso', icon: BarChart3 },
   { id: 'rewards', label: 'Recompensas', icon: Trophy },
   { id: 'store', label: 'Loja', icon: Store },
