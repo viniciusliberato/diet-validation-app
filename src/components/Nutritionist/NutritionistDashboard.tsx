@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { NutritionistSidebar } from '../Layout/NutritionistSidebar';
 import { Users, UserPlus, Calendar, BarChart3, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,7 @@ export function NutritionistDashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [newPatientUsername, setNewPatientUsername] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchPatients();
@@ -181,6 +183,105 @@ export function NutritionistDashboard() {
     }
   };
 
+  const getPageTitle = () => {
+    const titles = {
+      overview: 'Visão Geral',
+      patients: 'Pacientes',
+      plans: 'Criar Planos',
+      invitations: 'Convites',
+      reports: 'Relatórios',
+    };
+    return titles[activeTab as keyof typeof titles] || 'Painel do Nutricionista';
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total de Pacientes</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{patients.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {invitations.filter(i => i.status === 'pending').length} convites pendentes
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Convites Ativos</CardTitle>
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{invitations.filter(i => i.status === 'pending').length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {invitations.filter(i => i.status === 'accepted').length} aceitos este mês
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">0</div>
+                <p className="text-xs text-muted-foreground">Em desenvolvimento</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Taxa de Adesão</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">85%</div>
+                <p className="text-xs text-muted-foreground">+2% em relação ao mês passado</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'patients':
+        return <PatientsList patients={patients} />;
+      case 'plans':
+        return <NutritionistPlanCreator />;
+      case 'invitations':
+        return (
+          <InvitationManager 
+            invitations={invitations}
+            onSendInvitation={sendInvitation}
+            newPatientUsername={newPatientUsername}
+            setNewPatientUsername={setNewPatientUsername}
+          />
+        );
+      case 'reports':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Relatórios e Análises</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Esta seção está em desenvolvimento. Em breve você poderá visualizar:
+              </p>
+              <ul className="list-disc list-inside mt-4 space-y-2 text-sm text-muted-foreground">
+                <li>Relatórios de adesão aos planos alimentares</li>
+                <li>Estatísticas de validação de refeições</li>
+                <li>Progresso individual dos pacientes</li>
+                <li>Análises comparativas</li>
+              </ul>
+            </CardContent>
+          </Card>
+        );
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
@@ -188,133 +289,49 @@ export function NutritionistDashboard() {
   if (selectedPatientId) {
     const selectedPatient = patients.find(p => p.user_id === selectedPatientId);
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10">
-        <div className="container mx-auto p-4">
-          <div className="flex items-center gap-4 mb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedPatientId(null)}
-              className="mb-4"
-            >
-              ← Voltar aos Pacientes
-            </Button>
-            <h1 className="text-2xl font-bold">Acompanhamento - {selectedPatient?.full_name}</h1>
-          </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+          <NutritionistSidebar activeTab={activeTab} onTabChange={setActiveTab} />
           
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Acompanhamento - {selectedPatient?.full_name}</h2>
-              <p className="text-muted-foreground">Esta funcionalidade está em desenvolvimento</p>
-            </div>
+          <div className="flex-1 flex flex-col">
+            <header className="h-14 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedPatientId(null)}
+              >
+                ← Voltar
+              </Button>
+              <h1 className="text-xl font-semibold ml-4">Acompanhamento - {selectedPatient?.full_name}</h1>
+            </header>
+            
+            <main className="flex-1 p-6 overflow-auto">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold mb-2">Acompanhamento - {selectedPatient?.full_name}</h2>
+                <p className="text-muted-foreground">Esta funcionalidade está em desenvolvimento</p>
+              </div>
+            </main>
           </div>
         </div>
-      </div>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10">
-      <div className="container mx-auto p-4">
-        <div className="flex items-center gap-4 mb-6">
-          <Users className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold">Painel do Nutricionista</h1>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+        <NutritionistSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+            <SidebarTrigger />
+            <h1 className="text-xl font-semibold ml-4">{getPageTitle()}</h1>
+          </header>
+          
+          <main className="flex-1 p-6 overflow-auto">
+            {renderContent()}
+          </main>
         </div>
-
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="patients">Pacientes</TabsTrigger>
-            <TabsTrigger value="plans">Criar Planos</TabsTrigger>
-            <TabsTrigger value="invitations">Convites</TabsTrigger>
-            <TabsTrigger value="reports">Relatórios</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Pacientes</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{patients.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {invitations.filter(i => i.status === 'pending').length} convites pendentes
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Convites Ativos</CardTitle>
-                  <UserPlus className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{invitations.filter(i => i.status === 'pending').length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {invitations.filter(i => i.status === 'accepted').length} aceitos este mês
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Planos Ativos</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">Em desenvolvimento</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Taxa de Adesão</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">85%</div>
-                  <p className="text-xs text-muted-foreground">+2% em relação ao mês passado</p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="patients">
-            <PatientsList patients={patients} />
-          </TabsContent>
-
-          <TabsContent value="plans">
-            <NutritionistPlanCreator />
-          </TabsContent>
-
-          <TabsContent value="invitations">
-            <InvitationManager 
-              invitations={invitations}
-              onSendInvitation={sendInvitation}
-              newPatientUsername={newPatientUsername}
-              setNewPatientUsername={setNewPatientUsername}
-            />
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle>Relatórios e Análises</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Esta seção está em desenvolvimento. Em breve você poderá visualizar:
-                </p>
-                <ul className="list-disc list-inside mt-4 space-y-2 text-sm text-muted-foreground">
-                  <li>Relatórios de adesão aos planos alimentares</li>
-                  <li>Estatísticas de validação de refeições</li>
-                  <li>Progresso individual dos pacientes</li>
-                  <li>Análises comparativas</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
