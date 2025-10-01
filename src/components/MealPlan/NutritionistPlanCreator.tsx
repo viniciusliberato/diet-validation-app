@@ -65,22 +65,29 @@ export const NutritionistPlanCreator = () => {
       // Fetch patients associated with this nutritionist
       const { data: relationships, error: relationshipError } = await supabase
         .from('nutritionist_patients')
-        .select(`
-          patient_id,
-          profiles!nutritionist_patients_patient_id_fkey (
-            user_id,
-            username,
-            full_name
-          )
-        `)
+        .select('patient_id')
         .eq('nutritionist_id', user?.id);
 
       if (relationshipError) throw relationshipError;
 
-      const patientList = relationships?.map(r => ({
-        user_id: r.profiles.user_id,
-        username: r.profiles.username,
-        full_name: r.profiles.full_name
+      if (!relationships || relationships.length === 0) {
+        setPatients([]);
+        return;
+      }
+
+      // Fetch profiles for these patients
+      const patientIds = relationships.map(r => r.patient_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, full_name')
+        .in('user_id', patientIds);
+
+      if (profilesError) throw profilesError;
+
+      const patientList = profiles?.map(p => ({
+        user_id: p.user_id,
+        username: p.username || '',
+        full_name: p.full_name || ''
       })) || [];
 
       setPatients(patientList);

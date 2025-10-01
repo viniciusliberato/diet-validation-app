@@ -48,24 +48,26 @@ export function NutritionistDashboard() {
     try {
       const { data: relationships, error: relationshipError } = await supabase
         .from('nutritionist_patients')
-        .select(`
-          patient_id,
-          profiles!nutritionist_patients_patient_id_fkey (
-            id,
-            user_id,
-            full_name,
-            email,
-            username,
-            avatar_url,
-            created_at
-          )
-        `)
+        .select('patient_id')
         .eq('nutritionist_id', user?.id);
 
       if (relationshipError) throw relationshipError;
 
-      const patientsData = relationships?.map(rel => rel.profiles).filter(Boolean) || [];
-      setPatients(patientsData as Patient[]);
+      if (!relationships || relationships.length === 0) {
+        setPatients([]);
+        return;
+      }
+
+      // Fetch profiles for these patients
+      const patientIds = relationships.map(r => r.patient_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, full_name, email, username, avatar_url, created_at')
+        .in('user_id', patientIds);
+
+      if (profilesError) throw profilesError;
+
+      setPatients((profiles || []) as Patient[]);
     } catch (error) {
       console.error('Error fetching patients:', error);
       toast({
