@@ -39,6 +39,7 @@ export function NutritionistDashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [newPatientUsername, setNewPatientUsername] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sendingInvite, setSendingInvite] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -107,6 +108,7 @@ export function NutritionistDashboard() {
       return;
     }
 
+    setSendingInvite(true);
     try {
       const username = newPatientUsername.trim().toLowerCase();
       const isValid = /^[a-z0-9._]{3,30}$/.test(username);
@@ -119,12 +121,12 @@ export function NutritionistDashboard() {
         return;
       }
 
-      // Check if invitation already exists - use maybeSingle
+      // Check if invitation already exists
       const { data: existingInvitation } = await supabase
         .from('patient_invitations')
         .select('id, status')
         .eq('nutritionist_id', user?.id)
-        .eq('patient_username', newPatientUsername.trim().toLowerCase())
+        .eq('patient_username', username)
         .eq('status', 'pending')
         .maybeSingle();
 
@@ -150,10 +152,10 @@ export function NutritionistDashboard() {
 
       toast({
         title: "Sucesso!",
-        description: "Convite enviado com sucesso! O paciente poderá usar o código gerado para aceitar.",
+        description: "Convite criado! Compartilhe o código gerado com o paciente.",
       });
       setNewPatientUsername('');
-      fetchInvitations();
+      await fetchInvitations();
     } catch (error: any) {
       console.error('Error sending invitation:', error);
       toast({
@@ -161,19 +163,8 @@ export function NutritionistDashboard() {
         description: error.message || "Tente novamente mais tarde",
         variant: "destructive",
       });
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" />Pendente</Badge>;
-      case 'accepted':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><CheckCircle className="w-3 h-3 mr-1" />Aceito</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200"><XCircle className="w-3 h-3 mr-1" />Rejeitado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -250,6 +241,7 @@ export function NutritionistDashboard() {
             onSendInvitation={sendInvitation}
             newPatientUsername={newPatientUsername}
             setNewPatientUsername={setNewPatientUsername}
+            sending={sendingInvite}
           />
         );
       case 'reports':

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Clock, CheckCircle, XCircle, Copy, Check } from 'lucide-react';
+import { UserPlus, Clock, CheckCircle, XCircle, Copy, Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Invitation {
@@ -21,13 +21,15 @@ interface InvitationManagerProps {
   onSendInvitation: () => void;
   newPatientUsername: string;
   setNewPatientUsername: (value: string) => void;
+  sending?: boolean;
 }
 
 export function InvitationManager({ 
   invitations, 
   onSendInvitation, 
   newPatientUsername, 
-  setNewPatientUsername 
+  setNewPatientUsername,
+  sending = false
 }: InvitationManagerProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const { toast } = useToast();
@@ -141,14 +143,16 @@ export function InvitationManager({
                 placeholder="Ex: joao123"
                 value={newPatientUsername}
                 onChange={(e) => setNewPatientUsername(e.target.value.toLowerCase())}
-                onKeyPress={(e) => e.key === 'Enter' && onSendInvitation()}
+                onKeyPress={(e) => e.key === 'Enter' && !sending && onSendInvitation()}
+                disabled={sending}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Digite exatamente como o paciente se cadastrou
               </p>
             </div>
-            <Button onClick={onSendInvitation} className="mt-6">
-              Enviar Convite
+            <Button onClick={onSendInvitation} className="mt-6" disabled={sending}>
+              {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {sending ? 'Enviando...' : 'Enviar Convite'}
             </Button>
           </div>
         </CardContent>

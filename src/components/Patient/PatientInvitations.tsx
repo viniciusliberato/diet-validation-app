@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Mail, UserCheck, Clock, AlertCircle } from 'lucide-react';
+import { Mail, UserCheck, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
 interface Invitation {
   id: string;
@@ -28,6 +28,7 @@ export function PatientInvitations() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     fetchInvitations();
@@ -62,12 +63,14 @@ export function PatientInvitations() {
       setInvitations(data || []);
     } catch (error) {
       console.error('Error fetching invitations:', error);
+      toast.error('Erro ao carregar convites');
     } finally {
       setLoading(false);
     }
   };
 
   const acceptInvitation = async (invitationId: string) => {
+    setAccepting(true);
     try {
       const { error } = await supabase.functions.invoke('accept-invitation', {
         body: { invitationId },
@@ -77,9 +80,11 @@ export function PatientInvitations() {
 
       toast.success('Convite aceito! Agora você está sendo acompanhado por este nutricionista.');
       fetchInvitations();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting invitation:', error);
-      toast.error('Erro ao aceitar convite');
+      toast.error(error?.message || 'Erro ao aceitar convite');
+    } finally {
+      setAccepting(false);
     }
   };
 
@@ -106,35 +111,31 @@ export function PatientInvitations() {
       return;
     }
 
+    setAccepting(true);
     try {
-      const { data: invitation, error } = await supabase
-        .from('patient_invitations')
-        .select('*')
-        .eq('invitation_code', inviteCode.trim().toUpperCase())
-        .eq('status', 'pending')
-        .single();
+      const { error } = await supabase.functions.invoke('accept-invitation', {
+        body: { invitationCode: inviteCode.trim().toUpperCase() },
+      });
 
-      if (error || !invitation) {
-        toast.error('Código inválido ou convite não encontrado');
-        return;
-      }
+      if (error) throw error;
 
-      // Check if invitation is expired
-      if (new Date(invitation.expires_at) < new Date()) {
-        toast.error('Este convite expirou');
-        return;
-      }
-
-      await acceptInvitation(invitation.id);
+      toast.success('Convite aceito! Agora você está sendo acompanhado por este nutricionista.');
       setInviteCode('');
-    } catch (error) {
+      fetchInvitations();
+    } catch (error: any) {
       console.error('Error accepting invitation by code:', error);
-      toast.error('Erro ao aceitar convite');
+      toast.error(error?.message || 'Código inválido ou convite não encontrado');
+    } finally {
+      setAccepting(false);
     }
   };
 
   if (loading) {
-    return <div>Carregando convites...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
   }
 
   const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
@@ -160,11 +161,13 @@ export function PatientInvitations() {
                 placeholder="Ex: ABC12345"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                onKeyPress={(e) => e.key === 'Enter' && acceptByCode()}
+                onKeyPress={(e) => e.key === 'Enter' && !accepting && acceptByCode()}
+                disabled={accepting}
+                maxLength={8}
               />
             </div>
-            <Button onClick={acceptByCode} className="mt-6">
-              Aceitar
+            <Button onClick={acceptByCode} className="mt-6" disabled={accepting}>
+              {accepting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aceitar'}
             </Button>
           </div>
         </CardContent>
@@ -189,22 +192,29 @@ export function PatientInvitations() {
                     <p className="text-sm text-muted-foreground">
                       {invitation.nutritionist_profile?.email}
                     </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Expira em {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="font-mono">
+                        {invitation.invitation_code}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Expira em {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={() => acceptInvitation(invitation.id)}
+                      disabled={accepting}
                     >
-                      Aceitar
+                      {accepting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aceitar'}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => rejectInvitation(invitation.id)}
+                      disabled={accepting}
                     >
                       Rejeitar
                     </Button>
