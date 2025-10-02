@@ -67,25 +67,13 @@ export function PatientInvitations() {
     }
   };
 
-  const acceptInvitation = async (invitationId: string, nutritionistId: string) => {
+  const acceptInvitation = async (invitationId: string) => {
     try {
-      // Update invitation status
-      const { error: updateError } = await supabase
-        .from('patient_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', invitationId);
+      const { error } = await supabase.functions.invoke('accept-invitation', {
+        body: { invitationId },
+      });
 
-      if (updateError) throw updateError;
-
-      // Create nutritionist-patient relationship
-      const { error: relationshipError } = await supabase
-        .from('nutritionist_patients')
-        .insert({
-          nutritionist_id: nutritionistId,
-          patient_id: user?.id
-        });
-
-      if (relationshipError) throw relationshipError;
+      if (error) throw error;
 
       toast.success('Convite aceito! Agora você está sendo acompanhado por este nutricionista.');
       fetchInvitations();
@@ -137,7 +125,7 @@ export function PatientInvitations() {
         return;
       }
 
-      await acceptInvitation(invitation.id, invitation.nutritionist_id);
+      await acceptInvitation(invitation.id);
       setInviteCode('');
     } catch (error) {
       console.error('Error accepting invitation by code:', error);
@@ -209,7 +197,7 @@ export function PatientInvitations() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => acceptInvitation(invitation.id, invitation.nutritionist_id)}
+                      onClick={() => acceptInvitation(invitation.id)}
                     >
                       Aceitar
                     </Button>
